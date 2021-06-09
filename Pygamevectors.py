@@ -7,7 +7,6 @@ green=(0,255,0)
 red=(255,0,0)
 
 
-
 # Simulation model-parameters 
 
 wind_withd = 500
@@ -16,17 +15,32 @@ a=0
 sigma=1
 dt=1
 
+n = 5000 # number of vectors (they dont die during the whole simulation)
 
-class vector:
-    
+pygame.init()
+screen = pygame.display.set_mode((wind_withd,wind_height))
+pygame.display.set_caption('Simulation vectors and plants')
+clock = pygame.time.Clock()
+
+
+
+screen.fill(white)
+
+
+class vector(pygame.sprite.Sprite):
     def __init__(self,x,y):
+        super().__init__()
+        self.size = 4
         self.xpos = x
         self.ypos = y 
-        self.colour= red
+        self.image = pygame.Surface([self.size, self.size])
+        self.image.fill(red)
+        self.rect =self.image.get_rect()
+        self.rect.center=(self.xpos,self.ypos)
         self.state = 0 
-        self.size = 2
+        
 
-    def move(self):
+    def update(self):
         self.xpos = self.xpos + a*dt + sigma*random.normalvariate(0,dt)
         self.ypos = self.ypos + a*dt + sigma*random.normalvariate(0,dt)
         if self.xpos >= wind_withd:
@@ -38,62 +52,52 @@ class vector:
             self.ypos=self.ypos-1
         elif self.ypos <=0:
             self.ypos= self.ypos+1
-        
-    def display(self):
-        pygame.draw.circle(screen, self.colour, (int(self.xpos), int(self.ypos)), self.size, self.size)
+        self.rect.center=(self.xpos,self.ypos)
 
 
-class plant:
-
+class plant(pygame.sprite.Sprite):
     def __init__(self,x,y):
+        super().__init__()
         self.xpos = x
         self.ypos = y 
-        self.virus = []
-        self.size = 4
-        self.colour = (0,150,0)
-        
-    def display(self):
-        pygame.draw.circle(screen, self.colour, (int(self.xpos), int(self.ypos)), self.size, self.size) 
+        self.image = pygame.Surface([8, 8])
+        self.image.fill(green)
+        self.rect =self.image.get_rect()
+        self.rect.center=(self.xpos,self.ypos)
+        self.state = 0 
 
 
 
 
-n = 150  # number of vectors (they dont die during the whole simulation)
-
-list_vectors = []
-list_plants =[]
+vectors_group = pygame.sprite.Group()
+plants_group = pygame.sprite.Group()
 
 for i in range(n):
-    list_vectors.append(vector(random.randint(0,wind_withd),random.randint(0,wind_height)))
+    vectors_group.add(vector(random.randint(0,wind_withd),random.randint(0,wind_height)))
 
 
+#pygame.draw.rect(screen,white,(100,100,300,300))
 
-pygame.init()
-screen = pygame.display.set_mode((wind_withd,wind_height))
-pygame.display.set_caption('Simulation vectors and plants')
-clock = pygame.time.Clock()
-
-
-
-screen.fill(white)
-
-pygame.draw.rect(screen,white,(100,100,300,300))
 
 for i in range(105,400,10):
     for j in range(105,400,10):
-        list_plants.append(plant(i,j))
+        plants_group.add(plant(i,j))
 
-for planta in list_plants:
-    planta.display()
+
+
+
+
 
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-    for vec in list_vectors:
-        vec.move()
-        vec.display()
+
+    screen.fill(white)
+    plants_group.draw(screen)
+    vectors_group.update()
+    vectors_group.draw(screen)
     pygame.display.update()
     clock.tick(120)
 
