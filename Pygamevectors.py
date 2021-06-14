@@ -1,6 +1,9 @@
 import pygame, sys, random	
 from uuid import uuid4
 import ctypes
+from numpy import linalg as LA
+import matplotlib.cm as cm
+#from matplotlib.colors import Normalize
 
 random.seed(71017)
 
@@ -17,19 +20,19 @@ wind_height = 500
 
 # Model parameters 
 a=0           #Ito-trend
-sigma=1       #Ito- dif. coef.     
+sigma=5       #Ito- dif. coef.     
 dt=1          #time-step discretization of Ito dif
 mu=0.5        # mutation birth proba
 b=1           # birth rate
-d=0.05           # death rate (multiplier of trait (can even be a function))
-c=0           # death rate parameter (multiplier considering all traits in  position x) (cuadratic rate)
+d=0.1          # death rate (multiplier of trait (can even be a function))
+c=0.1          # death rate parameter (multiplier considering all traits in  position x) (cuadratic rate)
 beta= 1
-eta=1
-gamma=1
+eta=0.01
+gamma=0.01
 m=1 
 
 # Initial population paramters 
-n = 1000   # number of vectors (they dont die during the whole simulation)
+n = 100   # number of vectors (they dont die during the whole simulation)
 p= 0.4  #Proportion of loaded vectors at time zero
 
 
@@ -109,6 +112,14 @@ def find_object(list,identifier):
         if element.id == identifier:
             return element
 
+# This functions maps a list of traits to some color 
+def coloring_traits(list):
+    if len(list)==0:
+        color_plant=green
+    else:
+        norm_value=LA.norm(list)
+        color_plant=cm.autumn(norm_value)
+
 
 #Clases
 class vector(pygame.sprite.Sprite):
@@ -170,17 +181,19 @@ class plant(pygame.sprite.Sprite):
         self.xpos = x
         self.ypos = y 
         self.size = 5
+        self.color = green 
         self.image = pygame.Surface([self.size, self.size])
-        self.image.fill(green)
+        self.image.fill(self.color)
         self.rect =self.image.get_rect()
         self.rect.center=(self.xpos,self.ypos)
         self.trait = []  # List of viruses (inititally empty) and its traits  (in [0,1])
 
     def infection(self,contag_trait):
+        self.trait.append(contag_trait)
         self.size += 1
         self.image = pygame.Surface([self.size, self.size])
         self.image.fill(green)
-        self.trait.append(contag_trait)
+        
 
     def clonebirth(self,parent_trait):
         self.size+= 1
@@ -373,5 +386,5 @@ while True:
     charged_vectors_group.update()
     charged_vectors_group.draw(screen)
     pygame.display.update()
-    clock.tick(120)
+    clock.tick(60)
 
