@@ -3,7 +3,8 @@ from uuid import uuid4
 import ctypes
 from numpy import linalg as LA
 import matplotlib.cm as cm
-#from matplotlib.colors import Normalize
+import matplotlib as matplotlib
+
 
 random.seed(71017)
 
@@ -22,18 +23,18 @@ wind_height = 500
 a=0           #Ito-trend
 sigma=5       #Ito- dif. coef.     
 dt=1          #time-step discretization of Ito dif
-mu=0.5        # mutation birth proba
+mu=0        # mutation birth proba
 b=1           # birth rate
-d=0.1          # death rate (multiplier of trait (can even be a function))
-c=0.1          # death rate parameter (multiplier considering all traits in  position x) (cuadratic rate)
+d=0          # death rate (multiplier of trait (can even be a function))
+c=0         # death rate parameter (multiplier considering all traits in  position x) (cuadratic rate)
 beta= 1
 eta=0.01
-gamma=0.01
+gamma=0.0
 m=1 
 
 # Initial population paramters 
 n = 100   # number of vectors (they dont die during the whole simulation)
-p= 0.4  #Proportion of loaded vectors at time zero
+p= 0.9  #Proportion of loaded vectors at time zero
 
 
 pygame.init()
@@ -117,8 +118,18 @@ def coloring_traits(list):
     if len(list)==0:
         color_plant=green
     else:
-        norm_value=LA.norm(list)
-        color_plant=cm.autumn(norm_value)
+        norm_value=LA.norm(list)/len(list)
+        color_plant=color_map_color(norm_value)
+    return color_plant
+
+#Defining the color maping according to: https://matplotlib.org/stable/gallery/color/colormap_reference.html
+def color_map_color(value, cmap_name='tab10', vmin=0, vmax=1):
+    # norm = plt.Normalize(vmin, vmax)
+    norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+    cmap = cm.get_cmap(cmap_name)  # PiYG
+    rgb = cmap(norm(abs(value)))[:3]  # will return rgba, we take only first 3 so we get rgb
+    color = matplotlib.colors.rgb2hex(rgb)
+    return color
 
 
 #Clases
@@ -180,7 +191,7 @@ class plant(pygame.sprite.Sprite):
         self.id = str(uuid4())    # This provides a unique id 
         self.xpos = x
         self.ypos = y 
-        self.size = 5
+        self.size = 8
         self.color = green 
         self.image = pygame.Surface([self.size, self.size])
         self.image.fill(self.color)
@@ -190,35 +201,31 @@ class plant(pygame.sprite.Sprite):
 
     def infection(self,contag_trait):
         self.trait.append(contag_trait)
-        self.size += 1
-        self.image = pygame.Surface([self.size, self.size])
-        self.image.fill(green)
+        self.color = coloring_traits(self.trait)
+        self.image.fill(self.color)
         
 
     def clonebirth(self,parent_trait):
-        self.size+= 1
-        self.image = pygame.Surface([self.size, self.size])
-        self.image.fill(green)
         self.trait.append(parent_trait)
+        self.color =coloring_traits(self.trait)
+        self.image.fill(self.color)
+        
 
     def mutantbirth(self,parent_trait):
-        self.size+= 1
-        self.image = pygame.Surface([self.size, self.size])
-        self.image.fill(green)
         new_trait=random.random()  #Uniformly among all traits (need to change this to depend on parent_trait)
         self.trait.append(new_trait)
+        self.color =coloring_traits(self.trait)
+        self.image.fill(self.color)
 
     def death(self,parent_trait):
-        self.size-= 1
-        self.image = pygame.Surface([self.size, self.size])
-        self.image.fill(green)
         self.trait.remove(parent_trait)
+        self.color =coloring_traits(self.trait)
+        self.image.fill(self.color)
 
     def unloads(self,parent_trait):
-        self.size-= 1
-        self.image = pygame.Surface([self.size, self.size])
-        self.image.fill(green)
         self.trait.remove(parent_trait)
+        self.color =coloring_traits(self.trait)
+        self.image.fill(self.color)
 
 
 vectors_group = pygame.sprite.Group()
@@ -347,10 +354,7 @@ while True:
         if len(charged_vectors_id) > 0:
             target_mosco_id = random.choice(charged_vectors_id)
             target_mosco=find_object(charged_vectors_group,target_mosco_id)
-            neighbors=[]
-            for planta in plants_group:
-                if pygame.sprite.collide_rect_ratio(10)(target_mosco, planta):
-                    neighbors.append(planta)
+            neighbors=neighbour_list(target_mosco,plants_group,10)
 
             if len(neighbors)>0:
                 target_plant = random.choice(neighbors)
@@ -370,7 +374,7 @@ while True:
     elif theta_five <= theta and theta <= theta_six:
         # death of virus on vector #
         if len(charged_vectors_id) > 0:
-            target_mosco_id = random.choice(charged_vectors_id)
+            target_mosco_id = random.choice(charged_vectors_id)   #Here it makes sense to be uniform
             target_mosco = find_object(charged_vectors_group,target_mosco_id)
             target_mosco.death()
         ### updating lists and groups ####
