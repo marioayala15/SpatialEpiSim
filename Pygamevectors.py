@@ -16,21 +16,21 @@ red=(255,0,0)
 
 
 # Screen parameters 
-wind_withd = 500
-wind_height = 500
+wind_withd = 400
+wind_height = 400
 
 # Model parameters 
 a=0           #Ito-trend
-sigma=5       #Ito- dif. coef.     
+sigma=3       #Ito- dif. coef.     
 dt=1          #time-step discretization of Ito dif
 mu=0        # mutation birth proba
-b=1           # birth rate
-d=0          # death rate (multiplier of trait (can even be a function))
-c=0         # death rate parameter (multiplier considering all traits in  position x) (cuadratic rate)
-beta= 1
-eta=0.01
-gamma=0.0
-m=1 
+b=10           # birth rate
+d=0         # death rate (multiplier of trait (can even be a function))
+c=0.01         # death rate parameter (multiplier considering all traits in  position x) (cuadratic rate)
+beta= 0.1
+eta=0.1
+gamma=0
+m=2 
 
 # Initial population paramters 
 n = 100   # number of vectors (they dont die during the whole simulation)
@@ -118,12 +118,12 @@ def coloring_traits(list):
     if len(list)==0:
         color_plant=green
     else:
-        norm_value=LA.norm(list)/len(list)
+        norm_value=sum(list)/len(list)
         color_plant=color_map_color(norm_value)
     return color_plant
 
 #Defining the color maping according to: https://matplotlib.org/stable/gallery/color/colormap_reference.html
-def color_map_color(value, cmap_name='tab10', vmin=0, vmax=1):
+def color_map_color(value, cmap_name='Greens', vmin=0, vmax=1):
     # norm = plt.Normalize(vmin, vmax)
     norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     cmap = cm.get_cmap(cmap_name)  # PiYG
@@ -191,7 +191,7 @@ class plant(pygame.sprite.Sprite):
         self.id = str(uuid4())    # This provides a unique id 
         self.xpos = x
         self.ypos = y 
-        self.size = 8
+        self.size = 20
         self.color = green 
         self.image = pygame.Surface([self.size, self.size])
         self.image.fill(self.color)
@@ -245,9 +245,10 @@ for i in range(n):
     vectors_id.append(mosco.id)
 
 
+stripe= 50 # size of stripe free of plants 
 
-for i in range(105,400,10):
-    for j in range(105,400,10):
+for i in range(stripe+5,wind_withd-stripe,30):
+    for j in range(stripe+5,wind_height-stripe,30):
         planta=plant(i,j)
         plants_group.add(planta)
         healthy_plants_group.add(planta)
